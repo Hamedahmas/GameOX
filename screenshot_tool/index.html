@@ -1,0 +1,100 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Connect 5 – دستی</title>
+  <style>
+    body { background: #111; color: #fff; font-family: sans-serif; text-align: center; }
+    table { border-collapse: collapse; margin: 20px auto; }
+    td {
+      width: 60px; height: 60px;
+      background: #222; border: 2px solid #444;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+    .player1 { background: gold; }
+    .player2 { background: red; }
+    textarea {
+      width: 80%; height: 150px; margin: 20px auto; display: block;
+      background: #222; color: #fff; padding: 10px; border-radius: 8px;
+    }
+    button {
+      padding: 10px 20px; font-size: 16px;
+      margin-top: 10px; cursor: pointer; border-radius: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Connect 5 – بازی دو نفره</h1>
+  <table id="board"></table>
+  <textarea id="notes" placeholder="متنی بنویس که همراه تصویر ذخیره بشه..."></textarea>
+  <button onclick="captureAndSend()">📸 گرفتن عکس و ارسال به GitHub</button>
+  <div id="status">نوبت بازیکن 1</div>
+
+  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+  <script>
+    const ROWS = 7, COLS = 9;
+    let currentPlayer = 1;
+    const board = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
+    const table = document.getElementById("board");
+    const status = document.getElementById("status");
+
+    function renderBoard() {
+      table.innerHTML = "";
+      for (let r = 0; r < ROWS; r++) {
+        const row = document.createElement("tr");
+        for (let c = 0; c < COLS; c++) {
+          const cell = document.createElement("td");
+          if (board[r][c] === 1) cell.className = "player1";
+          if (board[r][c] === 2) cell.className = "player2";
+          cell.addEventListener("click", () => placePiece(r, c));
+          row.appendChild(cell);
+        }
+        table.appendChild(row);
+      }
+    }
+
+    function placePiece(r, c) {
+      if (board[r][c] !== 0) return;
+      board[r][c] = currentPlayer;
+      currentPlayer = currentPlayer === 1 ? 2 : 1;
+      status.innerText = `نوبت بازیکن ${currentPlayer}`;
+      renderBoard();
+    }
+
+    function captureAndSend() {
+      html2canvas(document.body).then(canvas => {
+        const imageBase64 = canvas.toDataURL("image/png").split(",")[1];
+        const message = document.getElementById("notes").value || "screenshot";
+
+        const token = "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"; // توکنت اینجاست
+        const repo = "Hamedahmas/GameOX";
+        const path = `screenshots/screenshot_${Date.now()}.png`;
+
+        fetch(`https://api.github.com/repos/${repo}/contents/${path}`, {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            message: message,
+            content: imageBase64
+          })
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.content && data.content.download_url) {
+            alert("✅ تصویر با موفقیت در GitHub آپلود شد!\n" + data.content.download_url);
+          } else {
+            console.error(data);
+            alert("❌ خطا در آپلود. بررسی کن.");
+          }
+        });
+      });
+    }
+
+    renderBoard();
+  </script>
+</body>
+</html>

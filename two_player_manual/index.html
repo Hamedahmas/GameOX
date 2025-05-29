@@ -1,0 +1,179 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Connect 5 - Manual Play</title>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #111;
+      color: #fff;
+      text-align: center;
+      padding: 20px;
+    }
+    table {
+      border-collapse: collapse;
+      margin: 20px auto;
+    }
+    td {
+      width: 60px;
+      height: 60px;
+      background: #222;
+      border: 2px solid #444;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+    .player { background: gold; }
+    .ai { background: red; }
+    #status {
+      margin-top: 20px;
+      font-size: 1.2em;
+    }
+    textarea {
+      width: 90%;
+      margin: 20px auto;
+      display: block;
+      font-size: 1em;
+      padding: 10px;
+      background: #222;
+      color: #fff;
+      border: 1px solid #555;
+      border-radius: 5px;
+    }
+    button {
+      padding: 10px 20px;
+      margin-top: 10px;
+      background-color: #444;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #666;
+    }
+  </style>
+</head>
+<body>
+  <h1>Connect 5 - Manual Play</h1>
+  <div id="status">Player 1's Turn</div>
+  <table id="board"></table>
+
+  <textarea id="notes" rows="20" placeholder="یادداشت‌های خود را اینجا بنویسید..."></textarea>
+  <button onclick="captureAndSend()">📸 گرفتن عکس و ارسال به GitHub</button>
+
+  <script>
+    const ROWS = 7;
+    const COLS = 9;
+    const board = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
+    const table = document.getElementById("board");
+    let gameOver = false;
+    let currentPlayer = 1;
+
+    function renderBoard() {
+      table.innerHTML = "";
+      for (let r = 0; r < ROWS; r++) {
+        const row = document.createElement("tr");
+        for (let c = 0; c < COLS; c++) {
+          const cell = document.createElement("td");
+          if (board[r][c] === 1) cell.className = "player";
+          if (board[r][c] === 2) cell.className = "ai";
+          cell.addEventListener("click", () => playerMove(c));
+          row.appendChild(cell);
+        }
+        table.appendChild(row);
+      }
+    }
+
+    function playerMove(col) {
+      if (gameOver) return;
+      for (let r = ROWS - 1; r >= 0; r--) {
+        if (board[r][col] === 0) {
+          board[r][col] = currentPlayer;
+          renderBoard();
+          if (checkWin(currentPlayer)) {
+            document.getElementById("status").innerText = `Player ${currentPlayer} Wins!`;
+            gameOver = true;
+          } else {
+            currentPlayer = currentPlayer === 1 ? 2 : 1;
+            document.getElementById("status").innerText = `Player ${currentPlayer}'s Turn`;
+          }
+          return;
+        }
+      }
+    }
+
+    function checkWin(player) {
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          if (c + 4 < COLS &&
+              board[r][c] === player &&
+              board[r][c+1] === player &&
+              board[r][c+2] === player &&
+              board[r][c+3] === player &&
+              board[r][c+4] === player) return true;
+
+          if (r + 4 < ROWS &&
+              board[r][c] === player &&
+              board[r+1][c] === player &&
+              board[r+2][c] === player &&
+              board[r+3][c] === player &&
+              board[r+4][c] === player) return true;
+
+          if (r + 4 < ROWS && c + 4 < COLS &&
+              board[r][c] === player &&
+              board[r+1][c+1] === player &&
+              board[r+2][c+2] === player &&
+              board[r+3][c+3] === player &&
+              board[r+4][c+4] === player) return true;
+
+          if (r + 4 < ROWS && c - 4 >= 0 &&
+              board[r][c] === player &&
+              board[r+1][c-1] === player &&
+              board[r+2][c-2] === player &&
+              board[r+3][c-3] === player &&
+              board[r+4][c-4] === player) return true;
+        }
+      }
+      return false;
+    }
+
+    function captureAndSend() {
+      html2canvas(document.body).then(canvas => {
+        const imageData = canvas.toDataURL("image/png").split(',')[1];
+        const token = "YOUR_GITHUB_TOKEN"; // ❗ توکن خود را اینجا وارد کنید
+        const repo = "Hamedahmas/GameOX";
+        const path = `screenshots/screenshot_${Date.now()}.png`;
+
+        fetch(`https://api.github.com/repos/${repo}/contents/${path}`, {
+          method: "PUT",
+          headers: {
+            "Authorization": `token ${token}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            message: "Add screenshot from game",
+            content: imageData
+          })
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.content && data.content.download_url) {
+            alert("✅ تصویر با موفقیت به گیت‌هاب ارسال شد!");
+          } else {
+            throw new Error("خطا در بارگذاری تصویر");
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          alert("❌ ارسال به گیت‌هاب ناموفق بود!");
+        });
+      });
+    }
+
+    renderBoard();
+  </script>
+</body>
+</html>

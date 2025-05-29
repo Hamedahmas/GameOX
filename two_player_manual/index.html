@@ -61,8 +61,8 @@
   <div id="status">Player 1's Turn</div>
   <table id="board"></table>
 
-  <textarea id="notes" rows="20" placeholder="یادداشت‌های خود را اینجا بنویسید..."></textarea>
-  <button onclick="captureAndSend()">📸 گرفتن عکس و ارسال به GitHub</button>
+  <textarea id="notes" rows="20" placeholder="Write your notes here..."></textarea>
+  <button onclick="captureAndSend()">📸 Take a photo and send it to GitHub</button>
 
   <script>
     const ROWS = 7;
@@ -162,14 +162,14 @@
         .then(response => response.json())
         .then(data => {
           if (data.content && data.content.download_url) {
-            alert("✅ تصویر با موفقیت به گیت‌هاب ارسال شد!");
+            alert("✅ Image successfully uploaded to GitHub!");
           } else {
-            throw new Error("خطا در بارگذاری تصویر");
+            throw new Error("Error loading image");
           }
         })
         .catch(err => {
           console.error(err);
-          alert("❌ ارسال به گیت‌هاب ناموفق بود!");
+          alert("❌ Upload to GitHub failed!");
         });
       });
     }
